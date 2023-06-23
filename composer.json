@@ -1,0 +1,52 @@
+{
+    "name": "enflow/laravel-excel-to-google-sheet",
+    "description": "Push Laravel Excel exporters to Google Sheets",
+    "keywords": [
+        "enflow",
+        "excel",
+        "sheet"
+    ],
+    "homepage": "https://github.com/enflow/laravel-excel-to-google-sheet",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Michel Bardelmeijer",
+            "email": "michel@enflow.nl"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^10.13",
+        "spatie/laravel-package-tools": "^1.15",
+        "google/apiclient": "^2.13",
+        "maatwebsite/excel": "^3.1"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.0",
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Enflow\\LaravelExcelToGoogleSheet\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Enflow\\LaravelExcelToGoogleSheet\\LaravelExcelToGoogleSheetServiceProvider"
+            ]
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Enflow\\LaravelExcelToGoogleSheet\\Test\\": "tests"
+        }
+    },
+    "scripts": {
+        "format": "vendor/bin/pint",
+        "test": "vendor/bin/phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
