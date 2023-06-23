@@ -26,7 +26,7 @@ class LaravelExcelToGoogleSheetServiceProvider extends PackageServiceProvider
             return GoogleSheetServiceFactory::createForConfig($config);
         });
 
-        $this->app->bind(GoogleSheetPusher::class, fn() => new GoogleSheetPusher($this->app->make(GoogleSheetService::class)));
+        $this->app->bind(GoogleSheetPusher::class, fn () => new GoogleSheetPusher($this->app->make(GoogleSheetService::class)));
     }
 
     protected function guardAgainstInvalidConfiguration(array $config = null): void

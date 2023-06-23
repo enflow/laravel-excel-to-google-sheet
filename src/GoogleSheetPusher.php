@@ -11,8 +11,7 @@ class GoogleSheetPusher
 {
     public function __construct(
         protected GoogleSheetService $googleSheetService,
-    )
-    {
+    ) {
 
     }
 
@@ -29,7 +28,7 @@ class GoogleSheetPusher
 
         try {
             collect(explode("\n", $rawExport))
-                ->map(fn(string $row) => str_getcsv($row))
+                ->map(fn (string $row) => str_getcsv($row))
                 ->chunk(5000)
                 ->each(function (Collection $chunk) use ($export) {
                     // Send the data to the Google Sheet.
