@@ -11,8 +11,7 @@ class GoogleSheetService
 {
     public function __construct(
         protected Sheets $service,
-    )
-    {
+    ) {
 
     }
 
@@ -20,7 +19,7 @@ class GoogleSheetService
     {
         $spreadsheet = $this->service->spreadsheets->get($spreadsheetId);
 
-        $sheet = collect($spreadsheet->getSheets())->firstWhere(fn(Sheets\Sheet $sheet) => $sheet->getProperties()->getTitle() === $sheetName);
+        $sheet = collect($spreadsheet->getSheets())->firstWhere(fn (Sheets\Sheet $sheet) => $sheet->getProperties()->getTitle() === $sheetName);
         throw_unless($sheet, InvalidConfiguration::sheetDoesntExist($sheetName));
 
         $sheetId = $sheet->getProperties()->getSheetId();
