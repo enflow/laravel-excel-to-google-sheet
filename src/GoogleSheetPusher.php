@@ -23,25 +23,27 @@ class GoogleSheetPusher
 
         $rawExport = ExcelFacade::raw($export, Excel::CSV);
 
+        $sheetName = $export->title();
+
         // First, ensure the sheet is empty.
-        $this->googleSheetService->clearSheets($export->googleSpreadsheetId());
+        $this->googleSheetService->clearSheet($export->googleSpreadsheetId(), $sheetName);
 
         try {
             collect(explode("\n", $rawExport))
                 ->map(fn (string $row) => str_getcsv($row))
                 ->chunk(5000)
-                ->each(function (Collection $chunk) use ($export) {
+                ->each(function (Collection $chunk) use ($export, $sheetName) {
                     // Send the data to the Google Sheet.
                     $this->googleSheetService->insert(
                         spreadsheetId: $export->googleSpreadsheetId(),
-                        range: $export->title(),
+                        range: $sheetName,
                         values: $chunk->values()->all(),
                     );
                 });
         } catch (GoogleException $e) {
             // Clear the complete sheet if (a chunk) fails.
             // We don't want to end up with a half-filled sheet.
-            $this->googleSheetService->clearSheets($export->googleSpreadsheetId());
+            $this->googleSheetService->clearSheet($export->googleSpreadsheetId(), $sheetName);
 
             throw $e;
         }

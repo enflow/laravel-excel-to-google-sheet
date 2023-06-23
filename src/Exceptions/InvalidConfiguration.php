@@ -16,8 +16,13 @@ class InvalidConfiguration extends Exception
         return new static("Class `{$class}` must implement `Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet`.");
     }
 
-    public static function exportDoesNotExist(string $class)
+    public static function exportDoesNotExist(string $class): static
     {
         return new static("Class `{$class}` does not exist.");
+    }
+
+    public static function sheetDoesntExist(string $sheet): static
+    {
+        return new static("Sheet `{$sheet}` does not exist in spreadsheet.");
     }
 }
