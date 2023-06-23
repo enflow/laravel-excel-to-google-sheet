@@ -6,6 +6,7 @@ use Enflow\LaravelExcelToGoogleSheet\Exceptions\InvalidConfiguration;
 use Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet;
 use Enflow\LaravelExcelToGoogleSheet\GoogleSheetPusher;
 use Illuminate\Console\Command;
+use Throwable;
 
 class PushExportsToGoogleSheets extends Command
 {
@@ -24,16 +25,24 @@ class PushExportsToGoogleSheets extends Command
 
                 $this->warn("Pushing {$export} to Google Sheets...");
 
-                /** @var \Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet $exporter */
-                $exporter = new $export();
+                try {
+                    /** @var \Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet $exporter */
+                    $exporter = new $export();
 
-                if (! $exporter instanceof ExportableToGoogleSheet) {
-                    throw InvalidConfiguration::exportMustImplementExportableToGoogleSheet($export);
+                    if (! $exporter instanceof ExportableToGoogleSheet) {
+                        throw InvalidConfiguration::exportMustImplementExportableToGoogleSheet($export);
+                    }
+
+                    $googleSheetPusher->__invoke($exporter);
+
+                    $this->info("Pushed {$export} to Google Sheets");
+                } catch (Throwable $e) {
+                    throw_if(app()->environment('local'), $e);
+
+                    $this->error("Failed to push {$export} to Google Sheets: {$e->getMessage()}. Continuing...");
+
+                    report($e);
                 }
-
-                $googleSheetPusher->__invoke($exporter);
-
-                $this->info("Pushed {$export} to Google Sheets");
             });
 
         $this->comment('All done');
