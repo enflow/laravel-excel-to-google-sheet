@@ -11,8 +11,7 @@ class GoogleSheetPusher
 {
     public function __construct(
         protected GoogleSheetService $googleSheetService,
-    )
-    {
+    ) {
 
     }
 
