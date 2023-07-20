@@ -32,14 +32,6 @@ class GoogleSheetPusher
         try {
             LazyCollection::make(function () use ($handle) {
                 while ($line = fgetcsv($handle)) {
-                    // Cast all numeric values to int or float.
-                    // Passing numbers as a string, Google Sheet will add a single quote (') before the value.
-                    foreach ($line as $key => $value) {
-                        if (is_numeric($value)) {
-                            $line[$key] = $value + 0; // Cast to int or float.
-                        }
-                    }
-
                     yield $line;
                 }
             })->chunk(5000)->each(function (LazyCollection $chunk) use ($export, $sheetName) {

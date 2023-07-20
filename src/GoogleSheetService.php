@@ -48,7 +48,7 @@ class GoogleSheetService
                 'values' => $values,
             ]),
             optParams: [
-                'valueInputOption' => 'RAW',
+                'valueInputOption' => 'USER_ENTERED',
             ],
         );
     }
