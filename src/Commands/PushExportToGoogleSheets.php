@@ -32,6 +32,8 @@ class PushExportToGoogleSheets extends Command
 
         $this->warn("Pushing {$export} to Google Sheets...");
 
+        $this->increaseMemoryLimitIfRequired();
+
         /** @var \Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet $exporter */
         $exporter = new $export();
 
@@ -57,5 +59,18 @@ class PushExportToGoogleSheets extends Command
         $exportName = $this->choice('Which export do you want to push?', array_keys($exports));
 
         return $exports[$exportName] ?? null;
+    }
+
+    private function increaseMemoryLimitIfRequired(): void
+    {
+        $memoryLimit = config('excel-to-google-sheet.memory_limit');
+        if ($memoryLimit === null) {
+            return;
+        }
+
+        // `phpoffice/phpspreadsheet` uses a lot of memory while processing the export.
+        // We'll allow the memory limit to be configured in the config.
+        // TODO: search for a more long term solution.
+        ini_set('memory_limit', $memoryLimit);
     }
 }

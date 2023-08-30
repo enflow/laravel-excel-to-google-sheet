@@ -14,4 +14,9 @@ return [
      * instead of a file path.
      */
     'service_account_credentials_json' => storage_path('secrets/google-service-account.json'),
+
+    /**
+     * When set, the given memory limit will be used for the duration of the export.
+     */
+    'memory_limit' => null,
 ];
