@@ -2,8 +2,6 @@
 
 namespace Enflow\LaravelExcelToGoogleSheet\Commands;
 
-use Enflow\LaravelExcelToGoogleSheet\Exceptions\InvalidConfiguration;
-use Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet;
 use Enflow\LaravelExcelToGoogleSheet\GoogleSheetPusher;
 use Illuminate\Console\Command;
 use Throwable;
@@ -17,7 +15,7 @@ class PushAllExportsToGoogleSheets extends Command
     public function handle(GoogleSheetPusher $googleSheetPusher): int
     {
         collect(config('excel-to-google-sheet.exports', []))
-            ->each(function (string $_, string $export) use ($googleSheetPusher) {
+            ->each(function (string $_, string $export) {
                 $this->warn("Pushing {$export} to Google Sheets...");
 
                 try {
