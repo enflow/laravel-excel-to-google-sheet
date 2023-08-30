@@ -2,7 +2,8 @@
 
 namespace Enflow\LaravelExcelToGoogleSheet;
 
-use Enflow\LaravelExcelToGoogleSheet\Commands\PushExportsToGoogleSheets;
+use Enflow\LaravelExcelToGoogleSheet\Commands\PushAllExportsToGoogleSheets;
+use Enflow\LaravelExcelToGoogleSheet\Commands\PushExportToGoogleSheets;
 use Enflow\LaravelExcelToGoogleSheet\Exceptions\InvalidConfiguration;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -14,7 +15,8 @@ class LaravelExcelToGoogleSheetServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-excel-to-google-sheet')
             ->hasConfigFile()
-            ->hasCommand(PushExportsToGoogleSheets::class);
+            ->hasCommand(PushExportToGoogleSheets::class)
+            ->hasCommand(PushAllExportsToGoogleSheets::class);
     }
 
     public function bootingPackage(): void

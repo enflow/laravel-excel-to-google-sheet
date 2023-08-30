@@ -8,34 +8,22 @@ use Enflow\LaravelExcelToGoogleSheet\GoogleSheetPusher;
 use Illuminate\Console\Command;
 use Throwable;
 
-class PushExportsToGoogleSheets extends Command
+class PushAllExportsToGoogleSheets extends Command
 {
-    public $signature = 'push-exports-to-google-sheets {--export=}';
+    public $signature = 'push-all-exports-to-google-sheets';
 
     public $description = 'Push exports to Google Sheets';
 
     public function handle(GoogleSheetPusher $googleSheetPusher): int
     {
         collect(config('excel-to-google-sheet.exports', []))
-            ->filter(fn (string $export) => ! $this->option('export') || $this->option('export') === $export)
-            ->each(function (string $export) use ($googleSheetPusher) {
-                if (! class_exists($export)) {
-                    throw InvalidConfiguration::exportDoesNotExist($export);
-                }
-
+            ->each(function (string $_, string $export) use ($googleSheetPusher) {
                 $this->warn("Pushing {$export} to Google Sheets...");
 
                 try {
-                    /** @var \Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet $exporter */
-                    $exporter = new $export();
-
-                    if (! $exporter instanceof ExportableToGoogleSheet) {
-                        throw InvalidConfiguration::exportMustImplementExportableToGoogleSheet($export);
-                    }
-
-                    $googleSheetPusher->__invoke($exporter);
-
-                    $this->info("Pushed {$export} to Google Sheets");
+                    $this->call('push-export-to-google-sheets', [
+                        '--export' => $export,
+                    ]);
                 } catch (Throwable $e) {
                     throw_if(app()->environment('local'), $e);
 
