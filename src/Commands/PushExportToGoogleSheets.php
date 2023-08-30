@@ -7,7 +7,6 @@ use Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet;
 use Enflow\LaravelExcelToGoogleSheet\GoogleSheetPusher;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
-use Throwable;
 
 class PushExportToGoogleSheets extends Command
 {
