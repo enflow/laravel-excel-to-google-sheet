@@ -43,14 +43,14 @@ After, you can add your existing Laravel Excel export classes to the `exports` a
 ],
 ```
 
-After setting up the exports, we recommend running `php artisan push-exports-to-google-sheets` to validate the exports are pushed correctly.
+After setting up the exports, we recommend running `php artisan push-export-to-google-sheets` to validate the exports are pushed correctly.
 
-To periodically schedule a push from your Laravel Excel export to a Google Sheet, you can schedule the `Enflow\LaravelExcelToGoogleSheet\PushExportsToGoogleSheets` command. For instance:
+To periodically schedule a push from your Laravel Excel export to a Google Sheet, you can schedule the `Enflow\LaravelExcelToGoogleSheet\PushAllExportsToGoogleSheets` command. This will send all defined exports to their Google Sheets. For instance:
 
 ```php
 use Enflow\LaravelExcelToGoogleSheet\PushExportsToGoogleSheets;
 
-$schedule->command(PushExportsToGoogleSheets::class)->dailyAt(3)->environments('production');
+$schedule->command(PushAllExportsToGoogleSheets::class)->dailyAt(3)->environments('production');
 ```
 
 ## Testing
