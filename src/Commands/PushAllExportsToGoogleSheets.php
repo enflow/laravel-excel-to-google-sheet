@@ -4,7 +4,6 @@ namespace Enflow\LaravelExcelToGoogleSheet\Commands;
 
 use Enflow\LaravelExcelToGoogleSheet\GoogleSheetPusher;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Model;
 use Throwable;
 
 class PushAllExportsToGoogleSheets extends Command
