@@ -31,7 +31,7 @@ class LaravelExcelToGoogleSheetServiceProvider extends PackageServiceProvider
         $this->app->bind(GoogleSheetPusher::class, fn () => new GoogleSheetPusher($this->app->make(GoogleSheetService::class)));
     }
 
-    protected function guardAgainstInvalidConfiguration(array $config = null): void
+    protected function guardAgainstInvalidConfiguration(?array $config = null): void
     {
         if (is_array($config['service_account_credentials_json'])) {
             return;
