@@ -22,7 +22,9 @@ class GoogleSheetPusher
         }
 
         $writer = app(Writer::class)->export($export, Excel::CSV);
-        $handle = fopen($writer->getLocalPath(), 'r');
+        $temporaryFilePath = $writer->getLocalPath();
+
+        $handle = fopen($temporaryFilePath, 'r');
 
         $sheetName = $export->title();
 
@@ -42,16 +44,21 @@ class GoogleSheetPusher
                     values: $chunk->values()->all(),
                 );
             });
-
-            if (is_resource($handle)) {
-                fclose($handle);
-            }
         } catch (GoogleException $e) {
             // Clear the complete sheet if (a chunk) fails.
             // We don't want to end up with a half-filled sheet.
             $this->googleSheetService->clearSheet($export->googleSpreadsheetId(), $sheetName);
 
             throw $e;
+        } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+
+            // Clean up the local file
+            if (is_file($temporaryFilePath) && file_exists($temporaryFilePath)) {
+                unlink($temporaryFilePath);
+            }
         }
     }
 }
