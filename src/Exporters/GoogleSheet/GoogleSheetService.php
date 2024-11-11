@@ -1,8 +1,7 @@
 <?php
 
-namespace Enflow\LaravelExcelToGoogleSheet;
+namespace Enflow\LaravelExcelExporter\Exporters\GoogleSheet;
 
-use Enflow\LaravelExcelToGoogleSheet\Exceptions\InvalidConfiguration;
 use Google\Service\Sheets;
 use Google_Service_Sheets_BatchUpdateSpreadsheetRequest;
 use Google_Service_Sheets_ValueRange;
@@ -20,7 +19,7 @@ class GoogleSheetService
         $spreadsheet = $this->service->spreadsheets->get($spreadsheetId);
 
         $sheet = collect($spreadsheet->getSheets())->firstWhere(fn (Sheets\Sheet $sheet) => $sheet->getProperties()->getTitle() === $sheetName);
-        throw_unless($sheet, InvalidConfiguration::sheetDoesntExist($sheetName));
+        throw_unless($sheet, GoogleSheetInvalidConfiguration::sheetDoesntExist($sheetName));
 
         $sheetId = $sheet->getProperties()->getSheetId();
 

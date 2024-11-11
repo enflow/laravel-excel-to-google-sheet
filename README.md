@@ -1,22 +1,23 @@
-# Push Laravel Excel exporters to Google Sheets
+# Push Laravel Excel exporters
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/enflow/laravel-excel-to-google-sheet.svg?style=flat-square)](https://packagist.org/packages/enflow/laravel-excel-to-google-sheet)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/enflow/laravel-excel-exporter.svg?style=flat-square)](https://packagist.org/packages/enflow/laravel-excel-exporter)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Total Downloads](https://img.shields.io/packagist/dt/enflow/laravel-excel-to-google-sheet.svg?style=flat-square)](https://packagist.org/packages/enflow/laravel-excel-to-google-sheet)
+[![Total Downloads](https://img.shields.io/packagist/dt/enflow/laravel-excel-exporter.svg?style=flat-square)](https://packagist.org/packages/enflow/laravel-excel-exporter)
 
-The `enflow/laravel-excel-to-google-sheet` package provides an easy way to push Laravel Excel exporters to Google Sheet. 
-Use-cases include creating a Laravel Export to be exported in your application layer, which also needs to be periodically synced to a remote Google Sheet.
+The `enflow/laravel-excel-exporter` package provides an easy way to push Laravel Excel exporters to Google Sheet and Google BigQuery. 
+Use-cases include creating a Laravel Export to be exported in your application layer, which also needs to be periodically synced to a remote Google Sheet or Google BigQuery table.
 
 ## Installation
 You can install the package via composer:
 
 ``` bash
-composer require enflow/laravel-excel-to-google-sheet
+composer require enflow/laravel-excel-exporter
 ```
 
 ## Authentication
 The package uses the [Google Client PHP library](https://github.com/googleapis/google-api-php-client) in the background. Authenticating with Google requires a Google Cloud Console account. 
 Via the Google Cloud Console account, you must have a valid project, where the `Google Spreadsheet API` is enabled. To export the required JSON credentials, you can follow the steps below:
+
 1) Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2) Create a new project or select an existing project
 3) Go to `APIs & Services` > `Credentials`
@@ -33,7 +34,7 @@ Via the Google Cloud Console account, you must have a valid project, where the `
 To start, publish the config file:
 
 ```bash
-php artisan vendor:publish --provider="Enflow\LaravelExcelToGoogleSheet\LaravelExcelToGoogleSheetServiceProvider" --tag="config"
+php artisan vendor:publish --provider="Enflow\LaravelExcelExporter\LaravelExcelExporterServiceProvider" --tag="config"
 ```
 
 After, you can add your existing Laravel Excel export classes to the `exports` array:
@@ -43,14 +44,14 @@ After, you can add your existing Laravel Excel export classes to the `exports` a
 ],
 ```
 
-After setting up the exports, we recommend running `php artisan push-export-to-google-sheets` to validate the exports are pushed correctly.
+After setting up the exports, we recommend running `php artisan excel-exporter:push` to validate the exports are pushed correctly.
 
-To periodically schedule a push from your Laravel Excel export to a Google Sheet, you can schedule the `Enflow\LaravelExcelToGoogleSheet\PushAllExportsToGoogleSheets` command. This will send all defined exports to their Google Sheets. For instance:
+To periodically schedule a push from your Laravel Excel export to the defined exporter, you can schedule the `Enflow\LaravelExcelExporter\Commands\PushAll` command. This will send all defined exports to their defined export destination. For instance:
 
 ```php
-use Enflow\LaravelExcelToGoogleSheet\PushExportsToGoogleSheets;
+use Enflow\LaravelExcelExporter\Commands\PushAll;
 
-$schedule->command(PushAllExportsToGoogleSheets::class)->dailyAt(3)->environments('production');
+$schedule->command(PushAll::class)->dailyAt(3)->environments('production');
 ```
 
 ## Testing

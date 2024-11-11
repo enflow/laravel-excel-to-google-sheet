@@ -1,6 +1,6 @@
 <?php
 
-namespace Enflow\LaravelExcelToGoogleSheet;
+namespace Enflow\LaravelExcelExporter\Exporters\GoogleSheet;
 
 use Google\Client;
 use Google\Service\Sheets as GoogleSheets;

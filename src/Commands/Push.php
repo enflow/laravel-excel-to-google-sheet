@@ -1,20 +1,18 @@
 <?php
 
-namespace Enflow\LaravelExcelToGoogleSheet\Commands;
+namespace Enflow\LaravelExcelExporter\Commands;
 
-use Enflow\LaravelExcelToGoogleSheet\Exceptions\InvalidConfiguration;
-use Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet;
-use Enflow\LaravelExcelToGoogleSheet\GoogleSheetPusher;
+use Enflow\LaravelExcelExporter\PushHandler;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 
-class PushExportToGoogleSheets extends Command
+class Push extends Command
 {
-    public $signature = 'push-export-to-google-sheets {--export=}';
+    public $signature = 'excel-exporter:push {--export=}';
 
-    public $description = 'Push a specific export to Google Sheets';
+    public $description = 'Push a specific excel to exporter';
 
-    public function handle(GoogleSheetPusher $googleSheetPusher): int
+    public function handle(): int
     {
         $export = $this->askExport();
 
@@ -30,27 +28,24 @@ class PushExportToGoogleSheets extends Command
             return self::FAILURE;
         }
 
-        $this->warn("Pushing {$export} to Google Sheets...");
+        $this->warn("Pushing {$export}...");
 
         $this->increaseMemoryLimitIfRequired();
 
-        /** @var \Enflow\LaravelExcelToGoogleSheet\ExportableToGoogleSheet $exporter */
+        /** @var \Enflow\LaravelExcelExporter\Exportable $exporter */
         $exporter = new $export();
 
-        if (! $exporter instanceof ExportableToGoogleSheet) {
-            throw InvalidConfiguration::exportMustImplementExportableToGoogleSheet($export);
-        }
+        $pushHandler = app(PushHandler::class);
+        $pushHandler->__invoke($exporter);
 
-        $googleSheetPusher->__invoke($exporter);
-
-        $this->info("Pushed {$export} to Google Sheets");
+        $this->info("Pushed {$export}");
 
         return self::SUCCESS;
     }
 
     private function askExport(): ?string
     {
-        $exports = config('excel-to-google-sheet.exports', []);
+        $exports = config('excel-exporter.exports', []);
 
         if ($this->option('export')) {
             return Arr::get($exports, $this->option('export'));
@@ -63,7 +58,7 @@ class PushExportToGoogleSheets extends Command
 
     private function increaseMemoryLimitIfRequired(): void
     {
-        $memoryLimit = config('excel-to-google-sheet.memory_limit');
+        $memoryLimit = config('excel-exporter.memory_limit');
         if ($memoryLimit === null) {
             return;
         }
