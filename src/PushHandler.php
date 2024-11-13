@@ -5,7 +5,7 @@ namespace Enflow\LaravelExcelExporter;
 use Enflow\LaravelExcelExporter\Exceptions\MustImplementExportable;
 use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\ExportableToGoogleSheet;
 use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\GoogleSheetPusher;
-use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\GoogleSheetService;
+use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\GoogleSheet;
 use Exception;
 use Google\Exception as GoogleException;
 use Illuminate\Support\LazyCollection;
@@ -16,18 +16,15 @@ class PushHandler
 {
     public function __invoke(Exportable $export): void
     {
-        $pusher = $this->pusher($export);
-
-        if (method_exists($export, 'prepare')) {
-            $export->prepare();
-        }
+        $pusher = PusherFactory::make($export);
 
         $writer = app(Writer::class)->export($export, Excel::CSV);
         $temporaryFilePath = $writer->getLocalPath();
 
-        $handle = fopen($temporaryFilePath, 'r');
-
+        // Ensure the export destination is empty.
         $pusher->clear();
+
+        $handle = fopen($temporaryFilePath, 'r');
 
         try {
             LazyCollection::make(function () use ($handle) {
@@ -47,15 +44,5 @@ class PushHandler
                 unlink($temporaryFilePath);
             }
         }
-    }
-
-    private function pusher(Exportable $export): Pusher
-    {
-        $class = match (true) {
-            $export instanceof ExportableToGoogleSheet => GoogleSheetPusher::class,
-            default => throw new Exception('Must implement specific pusher for exportable'),
-        };
-
-        return app($class);
     }
 }

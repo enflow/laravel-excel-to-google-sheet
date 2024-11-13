@@ -2,11 +2,12 @@
 
 namespace Enflow\LaravelExcelExporter\Exporters\GoogleSheet;
 
+use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\Exceptions\InvalidConfiguration;
 use Google\Service\Sheets;
 use Google_Service_Sheets_BatchUpdateSpreadsheetRequest;
 use Google_Service_Sheets_ValueRange;
 
-class GoogleSheetService
+class GoogleSheet
 {
     public function __construct(
         protected Sheets $service,
@@ -14,12 +15,12 @@ class GoogleSheetService
 
     }
 
-    public function clearSheet(string $spreadsheetId, string $sheetName): void
+    public function clear(string $spreadsheetId, string $sheetName): void
     {
         $spreadsheet = $this->service->spreadsheets->get($spreadsheetId);
 
         $sheet = collect($spreadsheet->getSheets())->firstWhere(fn (Sheets\Sheet $sheet) => $sheet->getProperties()->getTitle() === $sheetName);
-        throw_unless($sheet, GoogleSheetInvalidConfiguration::sheetDoesntExist($sheetName));
+        throw_unless($sheet, InvalidConfiguration::sheetDoesntExist($sheetName));
 
         $sheetId = $sheet->getProperties()->getSheetId();
 

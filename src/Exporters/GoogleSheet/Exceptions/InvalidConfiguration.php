@@ -1,10 +1,10 @@
 <?php
 
-namespace Enflow\LaravelExcelExporter\Exporters\GoogleSheet;
+namespace Enflow\LaravelExcelExporter\Exporters\GoogleSheet\Exceptions;
 
 use Exception;
 
-class GoogleSheetInvalidConfiguration extends Exception
+class InvalidConfiguration extends Exception
 {
     public static function credentialsJsonDoesNotExist(string $path): static
     {
