@@ -12,9 +12,7 @@ class GoogleSheetPusher implements Pusher
 {
     public function __construct(
         protected Exportable $export,
-    )
-    {
-    }
+    ) {}
 
     public function clear(): void
     {

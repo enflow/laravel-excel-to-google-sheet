@@ -33,7 +33,7 @@ class Push extends Command
         $this->increaseMemoryLimitIfRequired();
 
         /** @var \Enflow\LaravelExcelExporter\Exportable $exporter */
-        $exporter = new $export();
+        $exporter = new $export;
 
         $pushHandler = app(PushHandler::class);
         $pushHandler->__invoke($exporter);

@@ -11,9 +11,7 @@ class GoogleSheet
 {
     public function __construct(
         protected Sheets $service,
-    ) {
-
-    }
+    ) {}
 
     public function clear(string $spreadsheetId, string $sheetName): void
     {
