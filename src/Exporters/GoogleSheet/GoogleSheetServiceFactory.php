@@ -9,7 +9,7 @@ class GoogleSheetServiceFactory
 {
     public static function createForConfig(array $config): GoogleSheet
     {
-        $googleClient = new Client();
+        $googleClient = new Client;
         $googleClient->setApplicationName(config('app.name'));
         $googleClient->setScopes([GoogleSheets::SPREADSHEETS]);
         $googleClient->setAccessType('offline');
