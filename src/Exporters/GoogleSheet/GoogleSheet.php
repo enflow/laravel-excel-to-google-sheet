@@ -1,21 +1,19 @@
 <?php
 
-namespace Enflow\LaravelExcelToGoogleSheet;
+namespace Enflow\LaravelExcelExporter\Exporters\GoogleSheet;
 
-use Enflow\LaravelExcelToGoogleSheet\Exceptions\InvalidConfiguration;
+use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\Exceptions\InvalidConfiguration;
 use Google\Service\Sheets;
 use Google_Service_Sheets_BatchUpdateSpreadsheetRequest;
 use Google_Service_Sheets_ValueRange;
 
-class GoogleSheetService
+class GoogleSheet
 {
     public function __construct(
         protected Sheets $service,
-    ) {
+    ) {}
 
-    }
-
-    public function clearSheet(string $spreadsheetId, string $sheetName): void
+    public function clear(string $spreadsheetId, string $sheetName): void
     {
         $spreadsheet = $this->service->spreadsheets->get($spreadsheetId);
 
