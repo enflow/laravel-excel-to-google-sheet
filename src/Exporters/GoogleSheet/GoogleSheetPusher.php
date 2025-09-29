@@ -19,17 +19,15 @@ class GoogleSheetPusher implements Pusher
         $this->sheet()->clear($this->export->googleSpreadsheetId(), $this->export->title());
     }
 
-    public function insert(LazyCollection $collection): void
+    public function insert(LazyCollection $chunk): void
     {
         try {
-            $collection->each(function (LazyCollection $chunk) {
-                // Send the data to the Google Sheet.
-                $this->sheet()->insert(
-                    spreadsheetId: $this->export->googleSpreadsheetId(),
-                    range: $this->export->title(),
-                    values: $chunk->values()->all(),
-                );
-            });
+            // Send the data to the Google Sheet.
+            $this->sheet()->insert(
+                spreadsheetId: $this->export->googleSpreadsheetId(),
+                range: $this->export->title(),
+                values: $chunk->values()->all(),
+            );
         } catch (GoogleException $e) {
             // Clear the complete sheet if (a chunk) fails.
             // We don't want to end up with a half-filled sheet.
@@ -47,8 +45,6 @@ class GoogleSheetPusher implements Pusher
             throw InvalidConfiguration::credentialsJsonDoesNotExist($config['service_account_credentials_json']);
         }
 
-        return app(GoogleSheet::class, [
-            'service' => GoogleSheetServiceFactory::createForConfig($config),
-        ]);
+        return GoogleSheetServiceFactory::createForConfig($config);
     }
 }

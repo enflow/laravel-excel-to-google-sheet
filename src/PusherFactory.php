@@ -13,9 +13,9 @@ class PusherFactory
 
     public static function make(Exportable $export): Collection
     {
-        return collect(static::$exporters)
-            ->filter(fn(string $pusher, string $exporter) => $export instanceof $exporter)
-            ->map(fn($pusher) => app($pusher, ['export' => $export]))
+        return collect(config('excel-exporter.pushers'))
+            ->filter(fn(array $pusher) => $export instanceof $pusher['interface'])
+            ->map(fn(array $pusher) => app($pusher['pusher'], ['export' => $export]))
             ->values();
     }
 

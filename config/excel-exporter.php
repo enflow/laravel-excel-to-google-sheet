@@ -32,6 +32,21 @@ return [
     ],
 
     /**
+     * The pushers that are available to push exports to.
+     */
+    'pushers' => [
+        'google-sheet' => [
+            'interface' => \Enflow\LaravelExcelExporter\Exporters\GoogleSheet\ExportableToGoogleSheet::class,
+            'pusher' => \Enflow\LaravelExcelExporter\Exporters\GoogleSheet\GoogleSheetPusher::class,
+        ],
+
+        'google-bigquery' => [
+            'interface' => \Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\ExportableToGoogleBigQuery::class,
+            'pusher' => \Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\GoogleBigQueryPusher::class,
+        ],
+    ],
+
+    /**
      * When set, the given memory limit will be used for the duration of the export.
      */
     'memory_limit' => null,

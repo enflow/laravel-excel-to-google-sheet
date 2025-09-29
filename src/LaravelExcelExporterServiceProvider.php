@@ -16,8 +16,5 @@ class LaravelExcelExporterServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasCommand(Push::class)
             ->hasCommand(PushAll::class);
-
-        PusherFactory::register(Exporters\GoogleSheet\ExportableToGoogleSheet::class, Exporters\GoogleSheet\GoogleSheetPusher::class);
-        // PusherFactory::register(Exporters\GoogleBigQuery\ExportableToGoogleBigQuery::class, Exporters\GoogleBigQuery\GoogleBigQueryPusher::class);
     }
 }
