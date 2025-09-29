@@ -3,18 +3,23 @@
 namespace Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery;
 
 use Google\Client;
-use Google\Service\BigQuery as GoogleBigQuery;
+use Google\Service\Bigquery as GoogleBigquery;
 
 class GoogleBigQueryServiceFactory
 {
-    public function createForConfig(array $config): GoogleBigQuery
+    public function make(array $config, ExportableToGoogleBigQuery $export): GoogleBigQueryPusher
     {
         $googleClient = new Client;
         $googleClient->setApplicationName(config('app.name'));
-        $googleClient->setScopes([GoogleBigQuery::BIGQUERY]);
+        $googleClient->setScopes([GoogleBigquery::BIGQUERY]);
         $googleClient->setAccessType('offline');
         $googleClient->setAuthConfig($config['service_account_credentials_json']);
 
-        return new GoogleBigQuery($googleClient);
+        return new GoogleBigQueryPusher(
+            service: new GoogleBigquery($googleClient),
+            projectId: $config['project_id'],
+            datasetId: $config['dataset_id'],
+            export: $export,
+        );
     }
 }

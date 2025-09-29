@@ -32,6 +32,9 @@ return [
              */
             'service_account_credentials_json' => storage_path('secrets/google-service-account.json'),
 
+            'project_id' => 'your-project-id',
+            'dataset_id' => 'your-dataset-id',
+
             'interface' => \Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\ExportableToGoogleBigQuery::class,
             'factory'=> \Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\GoogleBigQueryServiceFactory::class,
         ],
