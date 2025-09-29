@@ -16,13 +16,11 @@ class GoogleSheetPusher implements Pusher
 
     public function clear(): void
     {
-        dd('would clear sheet');
         $this->sheet()->clear($this->export->googleSpreadsheetId(), $this->export->title());
     }
 
     public function insert(LazyCollection $collection): void
     {
-        dd('would insert data');
         try {
             $collection->each(function (LazyCollection $chunk) {
                 // Send the data to the Google Sheet.
