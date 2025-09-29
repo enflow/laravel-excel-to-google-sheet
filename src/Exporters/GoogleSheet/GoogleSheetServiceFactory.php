@@ -7,7 +7,7 @@ use Google\Service\Sheets as GoogleSheets;
 
 class GoogleSheetServiceFactory
 {
-    public static function createForConfig(array $config): GoogleSheet
+    public function make(array $config, ExportableToGoogleSheet $export): GoogleSheetPusher
     {
         $googleClient = new Client;
         $googleClient->setApplicationName(config('app.name'));
@@ -15,6 +15,6 @@ class GoogleSheetServiceFactory
         $googleClient->setAccessType('offline');
         $googleClient->setAuthConfig($config['service_account_credentials_json']);
 
-        return new GoogleSheet(new GoogleSheets($googleClient));
+        return new GoogleSheetPusher(new GoogleSheets($googleClient), $export);
     }
 }

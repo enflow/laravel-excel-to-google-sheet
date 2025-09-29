@@ -4,7 +4,7 @@
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![Total Downloads](https://img.shields.io/packagist/dt/enflow/laravel-excel-exporter.svg?style=flat-square)](https://packagist.org/packages/enflow/laravel-excel-exporter)
 
-The `enflow/laravel-excel-exporter` package provides an easy way to push Laravel Excel exporters to Google Sheet and Google BigQuery. 
+The `enflow/laravel-excel-exporter` package provides an easy way to push Laravel Excel exporters to Google Sheets and Google BigQuery. 
 Use-cases include creating a Laravel Export to be exported in your application layer, which also needs to be periodically synced to a remote Google Sheet or Google BigQuery table.
 
 ## Installation
@@ -16,13 +16,15 @@ composer require enflow/laravel-excel-exporter
 
 ## Authentication
 The package uses the [Google Client PHP library](https://github.com/googleapis/google-api-php-client) in the background. Authenticating with Google requires a Google Cloud Console account. 
-Via the Google Cloud Console account, you must have a valid project, where the `Google Spreadsheet API` is enabled. To export the required JSON credentials, you can follow the steps below:
+Via the Google Cloud Console account, you must have a valid project, where the required APIs are enabled. To export the required JSON credentials, you can follow the steps below:
 
 1) Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2) Create a new project or select an existing project
 3) Go to `APIs & Services` > `Credentials`
 4) Click `Create Credentials` > `Service account`
-5) Choose `Spreadsheet API` for the scope.
+5) Choose the appropriate API scope:
+   - For Google Sheets: `Google Spreadsheet API`
+   - For Google BigQuery: `BigQuery API`
 6) Fill in the required fields and click `Create`
 7) Select the created service account and click `Add key` > `Create new key`
 8) Select `JSON` and click `Create`
@@ -53,6 +55,91 @@ use Enflow\LaravelExcelExporter\Commands\PushAll;
 
 $schedule->command(PushAll::class)->dailyAt(3)->environments('production');
 ```
+
+## Exporters
+
+This package supports two types of exporters:
+
+### Google Sheets Exporter
+
+To use the Google Sheets exporter, your export class must implement the `ExportableToGoogleSheet` interface:
+
+```php
+use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\ExportableToGoogleSheet;
+
+class TeamsExport implements ExportableToGoogleSheet
+{
+    public function googleSpreadsheetId(): string
+    {
+        return 'your-spreadsheet-id';
+    }
+    
+    // ... other export methods
+}
+```
+
+### Google BigQuery Exporter
+
+To use the Google BigQuery exporter, your export class must implement the `ExportableToGoogleBigQuery` interface:
+
+```php
+use Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\ExportableToGoogleBigQuery;
+
+class TeamsExport implements ExportableToGoogleBigQuery
+{
+    public function googleBigQueryProjectId(): string
+    {
+        return 'your-project-id';
+    }
+    
+    public function googleBigQueryDatasetId(): string
+    {
+        return 'your-dataset-id';
+    }
+    
+    public function googleBigQueryTableId(): string
+    {
+        return 'your-table-id';
+    }
+    
+    // Optional: Custom preparation logic
+    public function prepare(): void
+    {
+        // Custom logic to prepare the dataset/table before export
+        // This method is called before clearing the table
+    }
+    
+    // ... other export methods
+}
+```
+
+**Note:** For BigQuery exports, the exporter will automatically create the dataset and table if they don't exist. The table will be cleared and recreated on each export to ensure fresh data.
+
+### BigQuery Architecture
+
+The BigQuery exporter follows the recommended pattern of using **multiple tables within a single dataset** rather than multiple datasets. This approach:
+
+- **Follows BigQuery best practices**: Single dataset with multiple tables is the standard pattern
+- **Mirrors Google Sheets structure**: Project → Dataset (like Spreadsheet) → Tables (like Sheets)
+- **Better performance**: Tables in the same dataset can be queried together more efficiently
+- **Easier management**: Single dataset to manage permissions, billing, and metadata
+- **Cost effective**: Shared resources and simpler billing structure
+
+**Example structure:**
+```
+Project: your-project-id
+├── Dataset: your-dataset-id
+    ├── Table: teams
+    ├── Table: users  
+    ├── Table: orders
+    └── Table: products
+```
+
+Each export class should use the same `googleBigQueryDatasetId()` but different `googleBigQueryTableId()` values.
+
+## Architecture
+
+The package uses a simplified architecture where the service classes (`GoogleSheet` and `GoogleBigQuery`) implement the `Pusher` interface directly. This eliminates the need for intermediate "pusher" wrapper classes while maintaining the same functionality and naming conventions.
 
 ## Testing
 ``` bash

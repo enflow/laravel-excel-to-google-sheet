@@ -5,6 +5,7 @@ namespace Enflow\LaravelExcelExporter;
 use Illuminate\Support\LazyCollection;
 use Maatwebsite\Excel\Excel;
 use Maatwebsite\Excel\Writer;
+use Throwable;
 
 class PushHandler
 {
@@ -27,6 +28,11 @@ class PushHandler
                 })->chunk(5000)->each(function (LazyCollection $chunk) use ($pusher) {
                     $pusher->insert($chunk);
                 });
+            } catch (Throwable $e) {
+                // If something went wrong, we should clear the destination to avoid partial data.
+                $pusher->clear();
+
+                throw $e;
             } finally {
                 if (is_resource($handle)) {
                     fclose($handle);

@@ -19,6 +19,9 @@ return [
              * instead of a file path.
              */
             'service_account_credentials_json' => storage_path('secrets/google-service-account.json'),
+
+            'interface' => \Enflow\LaravelExcelExporter\Exporters\GoogleSheet\ExportableToGoogleSheet::class,
+            'factory'=> \Enflow\LaravelExcelExporter\Exporters\GoogleSheet\GoogleSheetServiceFactory::class,
         ],
 
         'google-bigquery' => [
@@ -28,21 +31,9 @@ return [
              * instead of a file path.
              */
             'service_account_credentials_json' => storage_path('secrets/google-service-account.json'),
-        ],
-    ],
 
-    /**
-     * The pushers that are available to push exports to.
-     */
-    'pushers' => [
-        'google-sheet' => [
-            'interface' => \Enflow\LaravelExcelExporter\Exporters\GoogleSheet\ExportableToGoogleSheet::class,
-            'pusher' => \Enflow\LaravelExcelExporter\Exporters\GoogleSheet\GoogleSheetPusher::class,
-        ],
-
-        'google-bigquery' => [
             'interface' => \Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\ExportableToGoogleBigQuery::class,
-            'pusher' => \Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\GoogleBigQueryPusher::class,
+            'factory'=> \Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\GoogleBigQueryServiceFactory::class,
         ],
     ],
 
