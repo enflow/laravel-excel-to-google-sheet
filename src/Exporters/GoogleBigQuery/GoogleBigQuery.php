@@ -8,6 +8,7 @@ use Enflow\LaravelExcelExporter\Pusher;
 use Exception;
 use Google\Exception as GoogleException;
 use Google\Service\Bigquery;
+use Google\Service\Bigquery\TableDataInsertAllRequestRows;
 use Google\Service\Exception as GoogleServiceException;
 use Google_Service_Bigquery_Dataset;
 use Google_Service_Bigquery_DatasetReference;
@@ -29,11 +30,11 @@ class GoogleBigQuery implements Pusher
     {
         $projectId = $this->export->googleBigQueryProjectId();
         $datasetId = $this->export->googleBigQueryDatasetId();
-        $tableId = $this->export->googleBigQueryTableId();
+        $tableName = $this->export->googleBigQueryTableName();
 
         // Delete the existing table. Handle non-existence gracefully.
         try {
-            $this->service->tables->delete($projectId, $datasetId, $tableId);
+            $this->service->tables->delete($projectId, $datasetId, $tableName);
         } catch (GoogleServiceException $e) {
             if ($e->getCode() !== 404) {
                 throw $e;
@@ -45,11 +46,11 @@ class GoogleBigQuery implements Pusher
         $tableReference = new Google_Service_Bigquery_TableReference();
         $tableReference->setProjectId($projectId);
         $tableReference->setDatasetId($datasetId);
-        $tableReference->setTableId($tableId);
+        $tableReference->setTableId($tableName);
         $table->setTableReference($tableReference);
 
         $this->service->tables->insert(
-            projectId: $this->export->googleBigQueryProjectId(),
+            projectId: $projectId,
             datasetId: $datasetId,
             postBody: $table,
         );
@@ -57,12 +58,8 @@ class GoogleBigQuery implements Pusher
 
     public function insert(LazyCollection $chunk): void
     {
-        $projectId = $this->export->googleBigQueryProjectId();
-        $datasetId = $this->export->googleBigQueryDatasetId();
-        $tableId = $this->export->googleBigQueryTableId();
-
-        $insertRows = collect($chunk)->map(function ($row) {
-            $insertRow = new Google_Service_Bigquery_TableDataInsertAllRequest_Rows();
+        $insertRows = $chunk->map(function (array $row) {
+            $insertRow = new TableDataInsertAllRequestRows();
             $insertRow->setJson($row);
 
             return $insertRow;
@@ -71,6 +68,11 @@ class GoogleBigQuery implements Pusher
         $request = new Google_Service_Bigquery_TableDataInsertAllRequest();
         $request->setRows($insertRows);
 
-        $this->service->tabledata->insertAll($projectId, $datasetId, $tableId, $request);
+        $this->service->tabledata->insertAll(
+            projectId: $this->export->googleBigQueryProjectId(),
+            datasetId: $this->export->googleBigQueryDatasetId(),
+            tableId: $this->export->googleBigQueryTableName(),
+            postBody: $request,
+        );
     }
 }

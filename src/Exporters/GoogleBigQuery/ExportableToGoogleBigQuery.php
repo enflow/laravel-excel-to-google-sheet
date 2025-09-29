@@ -10,5 +10,5 @@ interface ExportableToGoogleBigQuery extends Exportable
 
     public function googleBigQueryDatasetId(): string;
 
-    public function googleBigQueryTableId(): string;
+    public function googleBigQueryTableName(): string;
 }

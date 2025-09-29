@@ -97,9 +97,9 @@ class TeamsExport implements ExportableToGoogleBigQuery
         return 'your-dataset-id';
     }
     
-    public function googleBigQueryTableId(): string
+    public function googleBigQueryTableName(): string
     {
-        return 'your-table-id';
+        return 'teams';
     }
     
     // Optional: Custom preparation logic
@@ -113,7 +113,7 @@ class TeamsExport implements ExportableToGoogleBigQuery
 }
 ```
 
-**Note:** For BigQuery exports, the exporter will automatically create the dataset and table if they don't exist. The table will be cleared and recreated on each export to ensure fresh data.
+**Note:** For BigQuery exports, ensure that the dataset exists in your BigQuery project. The exporter will automatically create the table if it doesn't exist and clear/recreate it on each export to ensure fresh data.
 
 ### BigQuery Architecture
 
@@ -135,7 +135,7 @@ Project: your-project-id
     └── Table: products
 ```
 
-Each export class should use the same `googleBigQueryDatasetId()` but different `googleBigQueryTableId()` values.
+Each export class should use the same `googleBigQueryDatasetId()` but specify different `googleBigQueryTableName()` values for each table.
 
 ## Architecture
 
