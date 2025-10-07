@@ -1,68 +1,77 @@
-# Push Laravel Excel exporters
+# Push Laravel Excel exports
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/enflow/laravel-excel-exporter.svg?style=flat-square)](https://packagist.org/packages/enflow/laravel-excel-exporter)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![Total Downloads](https://img.shields.io/packagist/dt/enflow/laravel-excel-exporter.svg?style=flat-square)](https://packagist.org/packages/enflow/laravel-excel-exporter)
 
-The `enflow/laravel-excel-exporter` package provides an easy way to push Laravel Excel exporters to Google Sheets and Google BigQuery. 
-Use-cases include creating a Laravel Export to be exported in your application layer, which also needs to be periodically synced to a remote Google Sheet or Google BigQuery table.
+The `enflow/laravel-excel-exporter` package provides an easy way to push Laravel Excel exports to Google Sheets and Google BigQuery.
+
+Common use-cases include exporting data with Laravel Excel in your application while periodically syncing that same export to a Google Sheet or a Google BigQuery table.
 
 ## Installation
-You can install the package via composer:
+You can install the package via Composer:
 
 ``` bash
 composer require enflow/laravel-excel-exporter
 ```
 
 ## Authentication
-The package uses the [Google Client PHP library](https://github.com/googleapis/google-api-php-client) in the background. Authenticating with Google requires a Google Cloud Console account. 
-Via the Google Cloud Console account, you must have a valid project, where the required APIs are enabled. To export the required JSON credentials, you can follow the steps below:
+This package uses the [Google API PHP Client](https://github.com/googleapis/google-api-php-client) under the hood. You will need a Google Cloud project with the correct APIs enabled and a Service Account JSON key.
+
+Create a Service Account JSON key:
 
 1) Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2) Create a new project or select an existing project
 3) Go to `APIs & Services` > `Credentials`
 4) Click `Create Credentials` > `Service account`
-5) Choose the appropriate API scope:
-   - For Google Sheets: `Google Spreadsheet API`
+5) Enable the APIs you need in the project:
+   - For Google Sheets: `Google Sheets API`
    - For Google BigQuery: `BigQuery API`
 6) Fill in the required fields and click `Create`
 7) Select the created service account and click `Add key` > `Create new key`
 8) Select `JSON` and click `Create`
 9) The JSON file will be downloaded to your computer
-10) Copy the contents of the JSON file and place it in a secure place. We recommend `storage/secrets/google-service-account.json`
+10) Store the downloaded JSON file securely. We recommend `storage/secrets/google-service-account.json`.
 
-## Implementation
+## Configuration
 
-To start, publish the config file:
+Publish the config file:
 
 ```bash
-php artisan vendor:publish --provider="Enflow\LaravelExcelExporter\LaravelExcelExporterServiceProvider" --tag="config"
+php artisan vendor:publish --tag="laravel-excel-exporter-config"
 ```
 
-After, you can add your existing Laravel Excel export classes to the `exports` array:
+Register your exports in the `exports` array:
 ```php
 'exports' => [
+    // key => Export class (must be resolvable from the container)
     'teams' => \App\Exports\TeamsExport::class,
 ],
 ```
 
-After setting up the exports, we recommend running `php artisan excel-exporter:push` to validate the exports are pushed correctly.
+You can validate an export by running the push command interactively:
 
-To periodically schedule a push from your Laravel Excel export to the defined exporter, you can schedule the `Enflow\LaravelExcelExporter\Commands\PushAll` command. This will send all defined exports to their defined export destination. For instance:
+```bash
+php artisan excel-exporter:push
+```
+
+### Scheduling
+
+To periodically push all configured exports to their destinations, schedule the `PushAll` command. This will send all defined exports to their configured exporter:
 
 ```php
 use Enflow\LaravelExcelExporter\Commands\PushAll;
 
-$schedule->command(PushAll::class)->dailyAt(3)->environments('production');
+$schedule->command(PushAll::class)->dailyAt('03:00')->environments('production');
 ```
 
 ## Exporters
 
-This package supports two types of exporters:
+This package supports two exporters:
 
-### Google Sheets Exporter
+### Google Sheets
 
-To use the Google Sheets exporter, your export class must implement the `ExportableToGoogleSheet` interface:
+Implement the `ExportableToGoogleSheet` interface on your export class and return the target Spreadsheet ID:
 
 ```php
 use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\ExportableToGoogleSheet;
@@ -78,68 +87,48 @@ class TeamsExport implements ExportableToGoogleSheet
 }
 ```
 
-### Google BigQuery Exporter
+### Google BigQuery
 
-To use the Google BigQuery exporter, your export class must implement the `ExportableToGoogleBigQuery` interface:
+Set the project and dataset in the package config. Then implement `ExportableToGoogleBigQuery` on your export class and specify the table and schema:
 
 ```php
 use Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery\ExportableToGoogleBigQuery;
 
 class TeamsExport implements ExportableToGoogleBigQuery
 {
-    public function googleBigQueryProjectId(): string
-    {
-        return 'your-project-id';
-    }
-    
-    public function googleBigQueryDatasetId(): string
-    {
-        return 'your-dataset-id';
-    }
-    
-    public function googleBigQueryTableName(): string
+    public function googleBigQueryTableId(): string
     {
         return 'teams';
     }
-    
-    // Optional: Custom preparation logic
-    public function prepare(): void
+
+    public function googleBigQuerySchema(): array
     {
-        // Custom logic to prepare the dataset/table before export
-        // This method is called before clearing the table
+        // column => BigQuery type (e.g. STRING, INT64, FLOAT64, BOOL, TIMESTAMP, DATE)
+        return [
+            'id' => 'INT64',
+            'name' => 'STRING',
+            'created_at' => 'TIMESTAMP',
+        ];
     }
-    
-    // ... other export methods
 }
 ```
 
-**Note:** For BigQuery exports, ensure that the dataset exists in your BigQuery project. The exporter will automatically create the table if it doesn't exist and clear/recreate it on each export to ensure fresh data.
+Notes:
+- Ensure the dataset exists in your BigQuery project. The table will be created or replaced automatically based on the schema you provide.
+- Configure `project_id`, `dataset_id`, and service account credentials in `config/excel-exporter.php`.
 
-### BigQuery Architecture
+### BigQuery layout guidance
 
-The BigQuery exporter follows the recommended pattern of using **multiple tables within a single dataset** rather than multiple datasets. This approach:
+Prefer a single dataset with multiple tables per project. Each export class can target a different table via `googleBigQueryTableId()` while sharing the configured dataset.
 
-- **Follows BigQuery best practices**: Single dataset with multiple tables is the standard pattern
-- **Mirrors Google Sheets structure**: Project → Dataset (like Spreadsheet) → Tables (like Sheets)
-- **Better performance**: Tables in the same dataset can be queried together more efficiently
-- **Easier management**: Single dataset to manage permissions, billing, and metadata
-- **Cost effective**: Shared resources and simpler billing structure
+## Console commands
 
-**Example structure:**
-```
-Project: your-project-id
-├── Dataset: your-dataset-id
-    ├── Table: teams
-    ├── Table: users  
-    ├── Table: orders
-    └── Table: products
-```
+- `excel-exporter:push` — interactively push one configured export (or via `--export=key`).
+- `excel-exporter:push-all` — push all configured exports.
 
-Each export class should use the same `googleBigQueryDatasetId()` but specify different `googleBigQueryTableName()` values for each table.
+## Memory usage
 
-## Architecture
-
-The package uses a simplified architecture where the service classes (`GoogleSheet` and `GoogleBigQuery`) implement the `Pusher` interface directly. This eliminates the need for intermediate "pusher" wrapper classes while maintaining the same functionality and naming conventions.
+Excel exports can be memory intensive. You may set `memory_limit` in `config/excel-exporter.php` for the duration of the push.
 
 ## Testing
 ``` bash

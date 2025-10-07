@@ -21,7 +21,7 @@ readonly class PushHandler
     public function __invoke(Exportable $export): void
     {
         PusherFactory::make($export)->each(function (Pusher $pusher) use ($export) {
-            $this->log('Pushing via '.$pusher::class);
+            $this->log('Pushing via '.$pusher::class, 'info');
 
             $writer = app(Writer::class)->export($export, Excel::CSV);
             $temporaryFilePath = $writer->getLocalPath();
@@ -67,8 +67,8 @@ readonly class PushHandler
         });
     }
 
-    private function log(string $log, string $level = 'info'): void
+    private function log(string $log, string $level = 'warn'): void
     {
-        $this->command?->{$level}("- {$log}");
+        $this->command?->{$level}($level === 'info' ? $log : "- {$log}");
     }
 }
