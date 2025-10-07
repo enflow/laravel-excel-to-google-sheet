@@ -1,5 +1,5 @@
-=============
 ⚠️ Deprecated: see https://github.com/enflow/laravel-excel-exporter
+
 =============
 
 # Push Laravel Excel exporters to Google Sheets
