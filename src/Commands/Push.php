@@ -16,9 +16,7 @@ class Push extends Command
     {
         $export = $this->askExport();
 
-        if (empty($export)) {
-            $this->error('No export selected');
-
+        if (! $export) {
             return self::FAILURE;
         }
 
@@ -44,12 +42,26 @@ class Push extends Command
         $exports = config('excel-exporter.exports', []);
 
         if ($this->option('export')) {
-            return Arr::get($exports, $this->option('export'));
+            $export = Arr::get($exports, $this->option('export'));
+
+            if (empty($export)) {
+                $this->error("Export `{$this->option('export')}` does not exist.");
+
+                return null;
+            }
+
+            return $export;
         }
 
         $exportName = $this->choice('Which export do you want to push?', array_keys($exports));
 
-        return $exports[$exportName] ?? null;
+        if (empty($exports[$exportName])) {
+            $this->error('No export selected.');
+
+            return null;
+        }
+
+        return $exports[$exportName];
     }
 
     private function increaseMemoryLimitIfRequired(): void

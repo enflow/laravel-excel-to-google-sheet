@@ -7,4 +7,6 @@ use Enflow\LaravelExcelExporter\Exportable;
 interface ExportableToGoogleBigQuery extends Exportable
 {
     public function googleBigQueryTableId(): string;
+
+    public function googleBigQuerySchema(): array;
 }

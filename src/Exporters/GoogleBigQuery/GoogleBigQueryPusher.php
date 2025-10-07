@@ -4,75 +4,181 @@ namespace Enflow\LaravelExcelExporter\Exporters\GoogleBigQuery;
 
 use Enflow\LaravelExcelExporter\Pusher;
 use Google\Service\Bigquery;
+use Google\Service\Bigquery\Job;
+use Google\Service\Bigquery\JobConfiguration;
+use Google\Service\Bigquery\JobConfigurationQuery;
+use Google\Service\Bigquery\JobReference;
 use Google\Service\Bigquery\TableDataInsertAllRequestRows;
+use Google\Service\Bigquery\TableDataInsertAllRequest;
 use Google\Service\Exception as GoogleServiceException;
-use Google_Service_Bigquery_Table;
-use Google_Service_Bigquery_TableDataInsertAllRequest;
-use Google_Service_Bigquery_TableReference;
 use Illuminate\Support\LazyCollection;
+use Illuminate\Support\Str;
+use RuntimeException;
+use Throwable;
 
 class GoogleBigQueryPusher implements Pusher
 {
     public function __construct(
-        protected Bigquery $service,
-        protected string $projectId,
-        protected string $datasetId,
+        protected Bigquery                   $service,
+        protected string                     $projectId,
+        protected string                     $datasetId,
         protected ExportableToGoogleBigQuery $export,
-    ) {}
+    )
+    {
+    }
 
     public function clear(): void
     {
-        // Delete the existing table. Handle non-existence gracefully.
-        try {
-            $this->service->tables->delete(
-                projectId: $this->projectId,
-                datasetId: $this->datasetId,
-                tableId: $this->export->googleBigQueryTableId(),
-            );
-        } catch (GoogleServiceException $e) {
-            if ($e->getCode() !== 404) {
-                throw $e;
-            }
+        $columns = collect($this->export->googleBigQuerySchema())
+            ->map(fn($type, $name) => sprintf('`%s` %s', $name, strtoupper($type)))
+            ->implode(', ');
+
+        $this->awaitJobDone(
+            jobId: $this->runQueryJob(sprintf('CREATE OR REPLACE TABLE %s (%s)', $this->tableRef(), $columns)),
+        );
+    }
+
+    public function insert(LazyCollection $chunk, int $index): void
+    {
+        $schema = array_keys($this->export->googleBigQuerySchema());
+
+        $rows = $chunk
+            ->when($index === 0, fn($c) => $c->skip(1)) // drop if no header
+            ->map(function (array $row, int $i) use ($index, $schema) {
+                $insert = new TableDataInsertAllRequestRows();
+                $insert->setJson(array_combine($schema, $row));
+                $insert->setInsertId($index . ':' . $i);
+
+                return $insert;
+            })
+            ->values()
+            ->all();
+
+        if (empty($rows)) {
+            return;
         }
 
-        // Create a new empty table
-        $table = new Google_Service_Bigquery_Table();
-        $tableReference = new Google_Service_Bigquery_TableReference();
-        $tableReference->setProjectId($this->projectId);
-        $tableReference->setDatasetId($this->datasetId);
-        $tableReference->setTableId($this->export->googleBigQueryTableId());
-        $table->setTableReference($tableReference);
+        $request = new TableDataInsertAllRequest();
+        $request->setRows($rows);
 
-        $this->service->tables->insert(
-            projectId: $this->projectId,
-            datasetId: $this->datasetId,
-            postBody: $table,
+        retry(
+            times: 24, // ~12s total with 500ms sleeps
+            callback: function () use ($request) {
+                try {
+                    $response = $this->service->tabledata->insertAll(
+                        projectId: $this->projectId,
+                        datasetId: $this->datasetId,
+                        tableId: $this->export->googleBigQueryTableId(),
+                        postBody: $request,
+                    );
+                } catch (GoogleServiceException $e) {
+                    if ($this->isRetryableThrowable($e)) {
+                        throw new RetryableBigQueryException($e->getMessage(), $e->getCode(), $e);
+                    }
+
+                    throw $e; // non-retryable
+                }
+
+                $errors = $response->getInsertErrors();
+                if (! empty($errors)) {
+                    if ($this->onlyRetryableInsertErrors($errors)) {
+                        throw new RetryableBigQueryException(json_encode($errors, JSON_UNESCAPED_SLASHES));
+                    }
+
+                    throw new RuntimeException('BigQuery insertAll failed: ' . json_encode($errors, JSON_UNESCAPED_SLASHES));
+                }
+            },
+            sleepMilliseconds: 500,
+            when: fn($e) => $e instanceof RetryableBigQueryException
         );
     }
 
-    public function insert(LazyCollection $chunk): void
+    protected function tableRef(): string
     {
-        $insertRows = $chunk->take(2)->map(function (array $row) {
-            // row contains:
-//            array:2 [
-//                0 => "Email"
-//  1 => "DEBUG"
-//]
+        return sprintf('`%s.%s.%s`', $this->projectId, $this->datasetId, $this->export->googleBigQueryTableId());
+    }
 
-            $insertRow = new TableDataInsertAllRequestRows();
-            $insertRow->setJson($row);
+    protected function runQueryJob(string $sql): string
+    {
+        $job = new Job([
+            'jobReference' => new JobReference([
+                'projectId' => $this->projectId,
+            ]),
+            'configuration' => new JobConfiguration([
+                'query' => new JobConfigurationQuery([
+                    'query' => $sql,
+                    'useLegacySql' => false,
+                ]),
+            ]),
+        ]);
 
-            return $insertRow;
-        })->all();
+        $inserted = $this->service->jobs->insert($this->projectId, $job);
 
-        $request = new Google_Service_Bigquery_TableDataInsertAllRequest();
-        $request->setRows($insertRows);
+        return $inserted->getJobReference()->getJobId();
+    }
 
-        $this->service->tabledata->insertAll(
-            projectId: $this->projectId,
-            datasetId: $this->datasetId,
-            tableId: $this->export->googleBigQueryTableId(),
-            postBody: $request,
+    protected function awaitJobDone(string $jobId): void
+    {
+        retry(
+            times: 24,
+            callback: function () use ($jobId) {
+                $status = $this->service->jobs->get($this->projectId, $jobId);
+
+                if (($status->getStatus()->getState() ?? null) !== 'DONE') {
+                    throw new RetryableBigQueryException('DDL not done yet');
+                }
+
+                if ($err = $status->getStatus()->getErrorResult()) {
+                    $msg = $err['message'] ?? 'DDL failed';
+                    $reason = $err['reason'] ?? '';
+                    throw new RuntimeException("$msg ($reason)");
+                }
+            },
+            sleepMilliseconds: 500,
+            when: fn($e) => $e instanceof RetryableBigQueryException
         );
+    }
+
+    protected function onlyRetryableInsertErrors(array $errors): bool
+    {
+        $retryable = [
+            'backendError',
+            'internalError',
+            'rateLimitExceeded',
+            'quotaExceeded',
+            'resourceUnavailable',
+            'notFound', // includes "Table is truncated."
+        ];
+
+        foreach ($errors as $rowErrors) {
+            foreach ($rowErrors as $err) {
+                if (! in_array($err['reason'] ?? '', $retryable, true)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    protected function isRetryableThrowable(Throwable $e): bool
+    {
+        if (! $e instanceof GoogleServiceException) {
+            return false;
+        }
+
+        $code = $e->getCode();
+        $body = (string)$e->getMessage();
+
+        // Common transient cases after DDL or under load
+        if (in_array($code, [429, 500, 502, 503, 504])) {
+            return true;
+        }
+
+        return $code === 404 && Str::contains($body, [
+            '"reason":"notFound"',
+            'Table is truncated',
+            'Not found: Table',
+        ]);
     }
 }
+

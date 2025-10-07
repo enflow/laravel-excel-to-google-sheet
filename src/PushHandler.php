@@ -25,8 +25,8 @@ class PushHandler
                     while ($line = fgetcsv($handle)) {
                         yield $line;
                     }
-                })->chunk(5000)->each(function (LazyCollection $chunk) use ($pusher) {
-                    $pusher->insert($chunk);
+                })->chunk(5000)->each(function (LazyCollection $chunk, int $index) use ($pusher) {
+                    $pusher->insert($chunk, $index);
                 });
             } catch (Throwable $e) {
                 // If something went wrong, we should clear the destination to avoid partial data.
