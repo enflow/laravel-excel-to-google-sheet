@@ -1,3 +1,7 @@
+=============
+⚠️ Deprecated: see https://github.com/enflow/laravel-excel-exporter
+=============
+
 # Push Laravel Excel exporters to Google Sheets
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/enflow/laravel-excel-to-google-sheet.svg?style=flat-square)](https://packagist.org/packages/enflow/laravel-excel-to-google-sheet)
