@@ -3,20 +3,16 @@
 namespace Enflow\LaravelExcelExporter;
 
 use Illuminate\Console\Command;
-use Illuminate\Console\OutputStyle;
 use Illuminate\Support\LazyCollection;
 use Maatwebsite\Excel\Excel;
 use Maatwebsite\Excel\Writer;
-use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
 readonly class PushHandler
 {
     public function __construct(
         private ?Command $command = null,
-    ) {
-
-    }
+    ) {}
 
     public function __invoke(Exportable $export): void
     {
