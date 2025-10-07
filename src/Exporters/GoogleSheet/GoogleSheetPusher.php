@@ -2,10 +2,8 @@
 
 namespace Enflow\LaravelExcelExporter\Exporters\GoogleSheet;
 
-use Enflow\LaravelExcelExporter\Exportable;
 use Enflow\LaravelExcelExporter\Exporters\GoogleSheet\Exceptions\InvalidConfiguration;
 use Enflow\LaravelExcelExporter\Pusher;
-use Google\Exception as GoogleException;
 use Google\Service\Sheets;
 use Google_Service_Sheets_BatchUpdateSpreadsheetRequest;
 use Google_Service_Sheets_ValueRange;

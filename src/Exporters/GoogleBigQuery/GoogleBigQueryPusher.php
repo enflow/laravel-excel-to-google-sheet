@@ -8,8 +8,8 @@ use Google\Service\Bigquery\Job;
 use Google\Service\Bigquery\JobConfiguration;
 use Google\Service\Bigquery\JobConfigurationQuery;
 use Google\Service\Bigquery\JobReference;
-use Google\Service\Bigquery\TableDataInsertAllRequestRows;
 use Google\Service\Bigquery\TableDataInsertAllRequest;
+use Google\Service\Bigquery\TableDataInsertAllRequestRows;
 use Google\Service\Exception as GoogleServiceException;
 use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Str;
@@ -19,18 +19,16 @@ use Throwable;
 class GoogleBigQueryPusher implements Pusher
 {
     public function __construct(
-        protected Bigquery                   $service,
-        protected string                     $projectId,
-        protected string                     $datasetId,
+        protected Bigquery $service,
+        protected string $projectId,
+        protected string $datasetId,
         protected ExportableToGoogleBigQuery $export,
-    )
-    {
-    }
+    ) {}
 
     public function clear(): void
     {
         $columns = collect($this->export->googleBigQuerySchema())
-            ->map(fn($type, $name) => sprintf('`%s` %s', $name, strtoupper($type)))
+            ->map(fn ($type, $name) => sprintf('`%s` %s', $name, strtoupper($type)))
             ->implode(', ');
 
         $this->awaitJobDone(
@@ -43,11 +41,11 @@ class GoogleBigQueryPusher implements Pusher
         $schema = array_keys($this->export->googleBigQuerySchema());
 
         $rows = $chunk
-            ->when($index === 0, fn($c) => $c->skip(1)) // drop if no header
+            ->when($index === 0, fn ($c) => $c->skip(1)) // drop if no header
             ->map(function (array $row, int $i) use ($index, $schema) {
-                $insert = new TableDataInsertAllRequestRows();
+                $insert = new TableDataInsertAllRequestRows;
                 $insert->setJson(array_combine($schema, $row));
-                $insert->setInsertId($index . ':' . $i);
+                $insert->setInsertId($index.':'.$i);
 
                 return $insert;
             })
@@ -58,7 +56,7 @@ class GoogleBigQueryPusher implements Pusher
             return;
         }
 
-        $request = new TableDataInsertAllRequest();
+        $request = new TableDataInsertAllRequest;
         $request->setRows($rows);
 
         retry(
@@ -85,11 +83,11 @@ class GoogleBigQueryPusher implements Pusher
                         throw new RetryableBigQueryException(json_encode($errors, JSON_UNESCAPED_SLASHES));
                     }
 
-                    throw new RuntimeException('BigQuery insertAll failed: ' . json_encode($errors, JSON_UNESCAPED_SLASHES));
+                    throw new RuntimeException('BigQuery insertAll failed: '.json_encode($errors, JSON_UNESCAPED_SLASHES));
                 }
             },
             sleepMilliseconds: 500,
-            when: fn($e) => $e instanceof RetryableBigQueryException
+            when: fn ($e) => $e instanceof RetryableBigQueryException
         );
     }
 
@@ -135,7 +133,7 @@ class GoogleBigQueryPusher implements Pusher
                 }
             },
             sleepMilliseconds: 500,
-            when: fn($e) => $e instanceof RetryableBigQueryException
+            when: fn ($e) => $e instanceof RetryableBigQueryException
         );
     }
 
@@ -157,6 +155,7 @@ class GoogleBigQueryPusher implements Pusher
                 }
             }
         }
+
         return true;
     }
 
@@ -167,7 +166,7 @@ class GoogleBigQueryPusher implements Pusher
         }
 
         $code = $e->getCode();
-        $body = (string)$e->getMessage();
+        $body = (string) $e->getMessage();
 
         // Common transient cases after DDL or under load
         if (in_array($code, [429, 500, 502, 503, 504])) {
@@ -181,4 +180,3 @@ class GoogleBigQueryPusher implements Pusher
         ]);
     }
 }
-
