@@ -26,13 +26,13 @@ class Push extends Command
             return self::FAILURE;
         }
 
-        $this->warn("Pushing {$export}...");
+        $this->warn("Pushing `{$export}`...");
 
         $this->increaseMemoryLimitIfRequired();
 
-        app(PushHandler::class)->__invoke(app($export));
+        app(PushHandler::class, ['command' => $this])->__invoke(app($export));
 
-        $this->info("Pushed {$export}");
+        $this->info("Pushed `{$export}`");
 
         return self::SUCCESS;
     }

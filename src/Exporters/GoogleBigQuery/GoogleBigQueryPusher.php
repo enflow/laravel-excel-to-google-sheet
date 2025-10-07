@@ -60,7 +60,7 @@ class GoogleBigQueryPusher implements Pusher
         $request->setRows($rows);
 
         retry(
-            times: 24, // ~12s total with 500ms sleeps
+            times: 50,
             callback: function () use ($request) {
                 try {
                     $response = $this->service->tabledata->insertAll(
@@ -86,7 +86,7 @@ class GoogleBigQueryPusher implements Pusher
                     throw new RuntimeException('BigQuery insertAll failed: '.json_encode($errors, JSON_UNESCAPED_SLASHES));
                 }
             },
-            sleepMilliseconds: 500,
+            sleepMilliseconds: 750,
             when: fn ($e) => $e instanceof RetryableBigQueryException
         );
     }

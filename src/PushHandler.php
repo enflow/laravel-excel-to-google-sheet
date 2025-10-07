@@ -2,23 +2,38 @@
 
 namespace Enflow\LaravelExcelExporter;
 
+use Illuminate\Console\Command;
+use Illuminate\Console\OutputStyle;
 use Illuminate\Support\LazyCollection;
 use Maatwebsite\Excel\Excel;
 use Maatwebsite\Excel\Writer;
+use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
-class PushHandler
+readonly class PushHandler
 {
+    public function __construct(
+        private ?Command $command = null,
+    ) {
+
+    }
+
     public function __invoke(Exportable $export): void
     {
         PusherFactory::make($export)->each(function (Pusher $pusher) use ($export) {
+            $this->log('Pushing via '.$pusher::class);
+
             $writer = app(Writer::class)->export($export, Excel::CSV);
             $temporaryFilePath = $writer->getLocalPath();
+
+            $this->log('Clearing destination...');
 
             // Ensure the export destination is empty.
             $pusher->clear();
 
             $handle = fopen($temporaryFilePath, 'r');
+
+            $this->log('Pushing data...');
 
             try {
                 LazyCollection::make(function () use ($handle) {
@@ -26,9 +41,15 @@ class PushHandler
                         yield $line;
                     }
                 })->chunk(5000)->each(function (LazyCollection $chunk, int $index) use ($pusher) {
+                    $this->log("Inserting chunk #{$index} (".number_format($chunk->count()).' rows)...');
+
                     $pusher->insert($chunk, $index);
                 });
+
+                $this->log('Finished pushing data.');
             } catch (Throwable $e) {
+                $this->log('Something went wrong: '.$e->getMessage(), 'error');
+
                 // If something went wrong, we should clear the destination to avoid partial data.
                 $pusher->clear();
 
@@ -44,5 +65,10 @@ class PushHandler
                 }
             }
         });
+    }
+
+    private function log(string $log, string $level = 'info'): void
+    {
+        $this->command?->{$level}("- {$log}");
     }
 }
